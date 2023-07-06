@@ -19,6 +19,9 @@ repositories {
 	maven {
         url "file:/./lcpm"
     }
+	maven {
+		url "file:/home/runner/work/itertool/itertool/lcpm"
+	}
 }
 
 dependencies {
