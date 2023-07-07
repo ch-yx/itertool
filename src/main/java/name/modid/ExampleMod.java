@@ -16,6 +16,7 @@ import carpet.script.value.Value;
 import carpet.script.LazyValue;
 import carpet.script.exception.InternalExpressionException;
 import carpet.script.value.AbstractListValue;
+import carpet.script.value.BooleanValue;
 import carpet.script.value.EntityValue;
 import carpet.script.value.LazyListValue;
 import carpet.script.value.ListValue;
@@ -49,6 +50,107 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
         // (lv.get(0)==lv.get(1))
 
         // ));
+        expression.addImpureFunction("iter_chain", lv->{
+            
+            if (lv.isEmpty()) {
+                throw new InternalExpressionException("'iter_chain' function should have at least 1 argument");
+            }
+            Iterator<Value> it;
+            if (lv.size()<=1) {
+                if(lv.get(0) instanceof AbstractListValue alv)
+                    it=alv.iterator();
+                throw new InternalExpressionException("The argument of 'iter_chain' function should be a list or iterator");
+            }else{
+                it = lv.iterator();
+            }
+            
+            return new LazyListValue(){
+                Iterator<Value> current = null;
+                AbstractListValue currentv=null;
+                Boolean ithn=null;
+                Boolean currenthn=null;
+                public boolean hasNext() {
+                    if (current == null) {
+                        if (ithn == null) {
+                            ithn=it.hasNext();
+                        }
+                        if(!ithn){
+                            return false;
+                        }
+                        if (it.next() instanceof AbstractListValue abv) {
+                            ithn=currenthn=null;
+                            current = abv.iterator();
+                            currentv = abv;
+                        }else{
+                            throw new InternalExpressionException("The argument of 'iter_chain' function should be a list or iterator");
+                        }
+                    }
+                    while(true){
+                        if (currenthn == null) {
+                            currenthn=current.hasNext();
+                        }
+                        if (currenthn) {
+                            return true;
+                        }
+                        if (ithn == null) {
+                            ithn=it.hasNext();
+                        }
+                        if(!ithn){
+                            return false;
+                        }
+                        if (it.next() instanceof AbstractListValue abv) {
+                            ithn=currenthn=null;
+                            current = abv.iterator();
+                            currentv = abv;
+                        }else{
+                            throw new InternalExpressionException("The argument of 'iter_chain' function should be a list or iterator");
+                        }
+                        
+                    }
+                }
+
+                @Override
+                public Value next() {
+                    if (current == null) {
+                        if (ithn == null) {
+                            ithn=it.hasNext();
+                        }
+                        if(!ithn){
+                            return Value.EOL;
+                        }
+                        if (it.next() instanceof AbstractListValue abv) {
+                            ithn=currenthn=null;
+                            current = abv.iterator();
+                            currentv = abv;
+                        }else{
+                            throw new InternalExpressionException("The argument of 'iter_chain' function should be a list or iterator");
+                        }
+                    }
+                    return null;
+                }
+
+                @Override
+                public void reset() {
+                    // TODO Auto-generated method stub
+                    throw new UnsupportedOperationException("Unimplemented method 'reset'");
+                }
+                
+            };
+        });
+        expression.addImpureUnaryFunction("iter_has_next", v->{
+            if (!(v instanceof final AbstractListValue alv))
+            {
+                throw new InternalExpressionException("The argument of 'iter_has_next' function should be a list or iterator");
+            }
+            return BooleanValue.of(alv.iterator().hasNext());
+        });
+        expression.addImpureUnaryFunction("iter_next", v->{
+            if (!(v instanceof final AbstractListValue alv))
+            {
+                throw new InternalExpressionException("The argument of 'iter_next' function should be a list or iterator");
+            }
+            return alv.iterator().next();
+        });
         expression.addContextFunction("spec", 2, (c, t, lv) -> {
             var player = lv.get(0);
             var id = lv.get(1);
@@ -118,7 +220,7 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
         // cart_product(...iters)->(res=[[]];for(iters,iter=_;newres=[];for(res,ent=_;for(iter,put(newres,null,[...ent,_]);));res=newres;);return
         // (res););
         // cart_product([1,2,3,4],[5,6,7],[8])
-        expression.addFunction("cartesian_product", list_of_iterable_values -> {
+        expression.addImpureFunction("cartesian_product", list_of_iterable_values -> {
 
             ArrayList<ArrayList<Value>> res = new ArrayList<ArrayList<Value>>();
             res.add(new ArrayList<Value>());
