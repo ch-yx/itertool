@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import carpet.script.CarpetContext;
 import carpet.script.CarpetExpression;
 import carpet.script.value.Value;
+import carpet.script.value.BooleanValue;
 import carpet.script.LazyValue;
 import carpet.script.exception.InternalExpressionException;
 import carpet.script.value.AbstractListValue;
@@ -23,9 +24,9 @@ import carpet.script.value.NumericValue;
 import carpet.script.value.StringValue;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-
 
 import carpet.CarpetExtension;
 import carpet.CarpetServer;
@@ -41,6 +42,74 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
         LOGGER.info("itertools loaded");
     }
 
+    public Value chain_fun(List<Value> lv) {
+
+        if (lv.isEmpty()) {
+            throw new InternalExpressionException("'iter_chain' function should have at least 1 argument");
+        }
+        Iterator<Value> it;
+        ArrayList<AbstractListValue> need_reset = new ArrayList<>();
+        if (lv.size() <= 1) {
+            if (lv.get(0) instanceof AbstractListValue alv) {
+                it = alv.iterator();
+                need_reset.add(alv);
+            } else
+                throw new InternalExpressionException(
+                        "The argument of 'iter_chain' function should be a list or iterator");
+        } else {
+            it = lv.iterator();
+        }
+
+        LazyListValue warper = new LazyListValue() {
+            public boolean hasNext() {
+                return it.hasNext();
+            }
+
+            public AbstractListValue next() {
+                var out = it.next();
+                if (!(out instanceof AbstractListValue ablvo)) {
+                    throw new InternalExpressionException(
+                            "The argument of 'iter_chain' function should be a list or iterator");
+                }
+                need_reset.add(ablvo);
+                return ablvo;
+            }
+
+            public void reset() {
+                throw new UnsupportedOperationException();
+            }
+        };
+        var out = com.google.common.collect.Iterables.concat((Iterable<? extends Iterable<? extends Value>>) warper)
+                .iterator();
+
+        final class __chain_iter extends LazyListValue {
+            __chain_iter(Iterator<Value> out, ArrayList<AbstractListValue> need_reset) {
+                _out = out;
+                _need_reset = need_reset;
+            }
+
+            public Iterator<Value> _out;
+            public ArrayList<AbstractListValue> _need_reset;
+
+            public boolean hasNext() {
+                return _out.hasNext();
+            }
+
+            public Value next() {
+                return _out.next();
+            }
+
+            public void reset() {
+                _need_reset.forEach(AbstractListValue::fatality);
+                _need_reset.clear();
+                __chain_iter new_value = (__chain_iter) chain_fun(lv);
+                this._out = new_value._out;
+                this._need_reset = new_value._need_reset;
+            }
+        }
+        return new __chain_iter(out, need_reset);
+    }
+
     public void scarpetApi(CarpetExpression ce) {
         var expression = ce.getExpr();
         // expression.addFunction("test",(lv)->StringValue.of(
@@ -49,6 +118,22 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
         // (lv.get(0)==lv.get(1))
 
         // ));
+
+        expression.addImpureFunction("iter_chain", this::chain_fun);
+        expression.addImpureUnaryFunction("iter_has_next", v -> {
+            if (!(v instanceof final AbstractListValue alv)) {
+                throw new InternalExpressionException(
+                        "The argument of 'iter_has_next' function should be a list or iterator");
+            }
+            return BooleanValue.of(alv.iterator().hasNext());
+        });
+        expression.addImpureUnaryFunction("iter_next", v -> {
+            if (!(v instanceof final AbstractListValue alv)) {
+                throw new InternalExpressionException(
+                        "The argument of 'iter_next' function should be a list or iterator");
+            }
+            return alv.iterator().next();
+        });
         expression.addContextFunction("spec", 2, (c, t, lv) -> {
             var player = lv.get(0);
             var id = lv.get(1);
