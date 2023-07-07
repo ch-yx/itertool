@@ -59,7 +59,7 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
             it = lv.iterator();
         }
 
-        Iterable<Iterable<Value>> warper = ()-> new Iterator<Iterable<Value>>() {
+        Iterable<Iterable<Value>> warper = () -> new Iterator<Iterable<Value>>() {
             public boolean hasNext() {
                 return it.hasNext();
             }
@@ -144,54 +144,50 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
             }
             return Value.NULL;
         });
-        expression.addLazyFunction("generator", -1, (c, t, lv) -> {
+        expression.addLazyFunction("generator", -1, (c, t, lv) -> (cc, tt) -> new LazyListValue() {
+            LazyValue State = (c, t) -> Value.NULL.reboundedTo("_");
+            LazyValue nextexpr = lv.get(0);
+            LazyValue hasNextexpr = lv.get(1);
 
-            return (cc, tt) -> new LazyListValue() {
-                LazyValue State = (c, t) -> Value.NULL.reboundedTo("_");
-                LazyValue nextexpr = lv.get(0);
-                LazyValue hasNextexpr = lv.get(1);
+            @Override
+            public boolean hasNext() {
+                LazyValue _val = c.getVariable("_");
+                c.setVariable("_", State);
+                try {
+                    Value result = hasNextexpr.evalValue(c, carpet.script.Context.Type.BOOLEAN);
+                    return result.getBoolean();
+                } finally {
+                    c.setVariable("_", _val);
+                }
+            }
 
-                @Override
-                public boolean hasNext() {
+            @Override
+            public Value next() {
+                LazyValue _val = c.getVariable("_");
+                c.setVariable("_", State);
+                try {
+                    Value result = nextexpr.evalValue(c, t);
+                    return result;
+                } finally {
+                    State = c.getVariable("_");
+                    c.setVariable("_", _val);
+                }
+            }
+
+            @Override
+            public void reset() {
+                if (lv.size() > 2) {
                     LazyValue _val = c.getVariable("_");
                     c.setVariable("_", State);
                     try {
-                        Value result = hasNextexpr.evalValue(c, carpet.script.Context.Type.BOOLEAN);
-                        return result.getBoolean();
+                        lv.get(2).evalValue(c, t);
                     } finally {
                         c.setVariable("_", _val);
                     }
                 }
+                State = (c, t) -> Value.NULL.reboundedTo("_");
+            }
 
-                @Override
-                public Value next() {
-                    LazyValue _val = c.getVariable("_");
-                    c.setVariable("_", State);
-                    try {
-                        Value result = nextexpr.evalValue(c, t);
-                        return result;
-                    } finally {
-                        State = c.getVariable("_");
-                        c.setVariable("_", _val);
-                    }
-                }
-
-                @Override
-                public void reset() {
-                    if (lv.size() > 2) {
-                        LazyValue _val = c.getVariable("_");
-                        c.setVariable("_", State);
-                        try {
-                            lv.get(2).evalValue(c, t);
-                        } finally {
-                            c.setVariable("_", _val);
-                        }
-
-                    }
-                    State = (c, t) -> Value.NULL.reboundedTo("_");
-                }
-
-            };
         });
 
         // script run
