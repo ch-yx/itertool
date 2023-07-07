@@ -24,7 +24,6 @@ import carpet.script.value.NumericValue;
 import carpet.script.value.StringValue;
 
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -60,12 +59,12 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
             it = lv.iterator();
         }
 
-        LazyListValue warper = new LazyListValue() {
+        Iterable<Iterable<Value>> warper = ()-> new Iterator<Iterable<Value>>() {
             public boolean hasNext() {
                 return it.hasNext();
             }
 
-            public AbstractListValue next() {
+            public Iterable<Value> next() {
                 var out = it.next();
                 if (!(out instanceof AbstractListValue ablvo)) {
                     throw new InternalExpressionException(
@@ -74,12 +73,8 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
                 need_reset.add(ablvo);
                 return ablvo;
             }
-
-            public void reset() {
-                throw new UnsupportedOperationException();
-            }
         };
-        var out = com.google.common.collect.Iterables.concat((Iterable<? extends Iterable<? extends Value>>) warper)
+        var out = com.google.common.collect.Iterables.concat(warper)
                 .iterator();
 
         final class __chain_iter extends LazyListValue {
