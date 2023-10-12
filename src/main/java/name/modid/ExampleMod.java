@@ -115,6 +115,42 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
         // ));
 
         expression.addImpureFunction("iter_chain", this::chain_fun);
+        expression.addImpureUnaryFunction("__test__", v -> {
+            class warper extends LazyListValue {
+                private String name;
+                private java.util.function.Supplier<Value> next;
+                private int count;
+
+                warper(String name, java.util.function.Supplier<Value> next){
+                    this.name=name;
+                    this.next=next;
+                    this.count=0;
+                }
+                @Override
+                public boolean hasNext() {
+                    System.out.println("hasnext:  "+name);
+                    return this.count<=4;
+                }
+
+                @Override
+                public Value next() {
+                    System.out.println("next:  "+name);
+                    this.count++;
+                    return next.get();
+                }
+
+                @Override
+                public void reset() {
+                    System.out.println("reset:  "+name);
+                    this.count=0;
+                }
+            }
+            return new warper("outter", ()-> new warper("innner", ()-> v));
+        });
+        expression.addImpureUnaryFunction("PPrint", v -> {
+            System.out.println(v);
+            return v;
+        });
         expression.addImpureUnaryFunction("iter_has_next", v -> {
             if (!(v instanceof final AbstractListValue alv)) {
                 throw new InternalExpressionException(
