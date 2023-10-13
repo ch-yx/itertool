@@ -20,6 +20,7 @@ import carpet.script.value.BlockValue;
 import carpet.script.value.FunctionValue;
 import carpet.script.value.NumericValue;
 import carpet.script.value.Value;
+import carpet.script.value.ValueConversions;
 import carpet.CarpetExtension;
 import carpet.CarpetServer;
 
@@ -73,18 +74,21 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
             var i = FilledMapItem.createMap(cc.level(), ((BlockValue) lv.get(0)).getPos().getX(),
                     ((BlockValue) lv.get(0)).getPos().getZ(), (byte) ((NumericValue) lv.get(1)).getInt(),
                     lv.get(2).getBoolean(), lv.get(3).getBoolean());
-            return carpet.script.value.ValueConversions.of(i, cc.level().getRegistryManager());
+            return ValueConversions.of(i, cc.level().getRegistryManager());
         });
         expression.addContextFunction("vil_drawmap", -1, (c, t, lv) -> {
             CarpetContext cc = (CarpetContext) c;
-            FilledMapItem.fillExplorationMap(cc.level(), carpet.script.value.ValueConversions
-                    .getItemStackFromValue(lv.get(0), true, cc.level().getRegistryManager()));
-            return Value.NULL;
+            var i = ValueConversions
+                    .getItemStackFromValue(lv.get(0), true, cc.level().getRegistryManager());
+            FilledMapItem.fillExplorationMap(cc.level(), i);
+            return ValueConversions.of(i, cc.level().getRegistryManager());
         });
         expression.addContextFunction("vil_markmap", -1, (c, t, lv) -> {
             CarpetContext cc = (CarpetContext) c;
 
-            MapState.addDecorationsNbt(carpet.script.value.ValueConversions.getItemStackFromValue(lv.get(0),true, cc.level().getRegistryManager()), ((BlockValue) lv.get(1)).getPos(), lv.get(2).getString(), MapIcon.Type.byId( (byte) ((NumericValue) lv.get(3)).getInt()));
-            return Value.NULL;});
+            var i = ValueConversions.getItemStackFromValue(lv.get(0),true, cc.level().getRegistryManager());
+            MapState.addDecorationsNbt(i, ((BlockValue) lv.get(1)).getPos(), lv.get(2).getString(), MapIcon.Type.byId( (byte) ((NumericValue) lv.get(3)).getInt()));
+            return ValueConversions.of(i, cc.level().getRegistryManager());
+        });
     }
 }
