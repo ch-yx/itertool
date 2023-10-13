@@ -9,12 +9,12 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>carpet</groupId>
   <artifactId>fabric-carpet</artifactId>
-  <version>1.20-1.4.112+v230608</version>
+  <version>23w41a-1.4.121+v231011</version>
   <dependencies>
     <dependency>
       <groupId>net.fabricmc</groupId>
       <artifactId>fabric-loader</artifactId>
-      <version>0.14.19</version>
+      <version>0.14.22</version>
       <scope>runtime</scope>
     </dependency>
   </dependencies>
