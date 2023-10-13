@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 
 import carpet.script.CarpetEventServer;
 import carpet.script.CarpetExpression;
+import carpet.script.CarpetScriptServer;
+import carpet.script.ScriptHost;
 import carpet.script.argument.FunctionArgument;
 import carpet.script.exception.InternalExpressionException;
 import carpet.script.value.FunctionValue;
@@ -26,14 +28,16 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
         LOGGER.info(funname+" loaded");
     }
 
-    public void onGameStarted(){
-        f=null;
-    }
 
     String funname="villager_trade_ovr";
+    public static String hostname;
+    public static CarpetScriptServer scriptServer;
     
 
     public void scarpetApi(CarpetExpression ce) {
+        
+        f=null;
+        LOGGER.info(funname+" cleared\n\n\n\n");
         var expression=ce.getExpr();
         expression.addFunctionWithDelegation(funname, 1, false, false, (c, t, expr, tok, lv) ->
         {
@@ -41,6 +45,10 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
             {
                 f=null;
             }
+            
+                
+            this.hostname = c.host.getName();
+            this.scriptServer = (CarpetScriptServer) c.host.scriptServer();
             FunctionArgument functionArgument = FunctionArgument.findIn(c, expression.module, lv, 0, false, true);
             f = functionArgument.function;
             return Value.TRUE;
