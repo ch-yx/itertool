@@ -23,7 +23,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.village.TradeOffer;
 import net.minecraft.village.TradeOfferList;
 
-@Mixin({WanderingTraderEntity.class,VillagerEntity.class})
+@Mixin({VillagerEntity.class,WanderingTraderEntity.class})
 public class TradeingMixin {
     @Inject(at = @At("HEAD"), method = "fillRecipes", cancellable = true)
     protected void fillRecipes(CallbackInfo ci) {
