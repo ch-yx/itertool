@@ -87,7 +87,17 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
             CarpetContext cc = (CarpetContext) c;
 
             var i = ValueConversions.getItemStackFromValue(lv.get(0),true, cc.level().getRegistryManager());
-            MapState.addDecorationsNbt(i, ((BlockValue) lv.get(1)).getPos(), lv.get(2).getString(), MapIcon.Type.byId( (byte) ((NumericValue) lv.get(3)).getInt()));
+            MapIcon.Type mType=null;
+            for (var value : MapIcon.Type.values()) {
+                if (value.asString().equals(lv.get(3).getString())) {
+                    mType=value;
+                    break;
+                }
+            }
+            if(mType==null){
+                return Value.FALSE;
+            }
+            MapState.addDecorationsNbt(i, ((BlockValue) lv.get(1)).getPos(), lv.get(2).getString(), mType);
             return ValueConversions.of(i, cc.level().getRegistryManager());
         });
     }
