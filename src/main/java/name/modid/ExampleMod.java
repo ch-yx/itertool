@@ -1,6 +1,8 @@
 package name.modid;
 
 import net.fabricmc.api.ModInitializer;
+import net.minecraft.server.MinecraftServer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +29,10 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
         f=null;
         LOGGER.info(funname+" loaded");
     }
+    public void onServerLoaded(MinecraftServer server){
+        f=null;
+        LOGGER.info(funname+" cleared\n\n\n\n");
+    }
 
 
     String funname="villager_trade_ovr";
@@ -47,9 +53,9 @@ public class ExampleMod implements CarpetExtension, ModInitializer {
             }
             
                 
-            this.hostname = c.host.getName();
-            this.scriptServer = (CarpetScriptServer) c.host.scriptServer();
-            FunctionArgument functionArgument = FunctionArgument.findIn(c, expression.module, lv, 0, false, true);
+            hostname = c.host.getName();
+            scriptServer = (CarpetScriptServer) c.host.scriptServer();
+            FunctionArgument functionArgument = FunctionArgument.findIn(c, expression.module, lv, 0, false, false);
             f = functionArgument.function;
             return Value.TRUE;
         });
